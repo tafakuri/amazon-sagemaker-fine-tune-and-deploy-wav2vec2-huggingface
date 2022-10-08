@@ -37,6 +37,13 @@ if __name__ == "__main__":
     parser.add_argument("--n_gpus", type=str, default=os.environ["SM_NUM_GPUS"])
     parser.add_argument("--training_dir", type=str, default=os.environ["SM_CHANNEL_TRAIN"])
     parser.add_argument("--test_dir", type=str, default=os.environ["SM_CHANNEL_TEST"])
+    
+    # HuggingFace parameters
+    parser.add_argument("--push_to_hub", type=boolean, default=False)
+    parser.add_argument("--hub_model_id", type=string)
+    parser.add_argument("--hub_strategy", type=string)
+    parser.add_argument("--hub_token", type=string)
+    parser.add_argument("--hub_private_repo", type=boolean, default=False)
 
     args, _ = parser.parse_known_args()
 
@@ -154,11 +161,18 @@ if __name__ == "__main__":
 
     model = Wav2Vec2ForCTC.from_pretrained(
         args.model_name, 
+        attention_dropout=0.1,
+        hidden_dropout=0.1,
+        feat_proj_dropout=0.0,
+        mask_time_prob=0.05,
+        layerdrop=0.1,
         gradient_checkpointing=True, 
         ctc_loss_reduction="mean", 
         pad_token_id=processor.tokenizer.pad_token_id,
+        vocab_size=len(processor.tokenizer)
     )
     model.freeze_feature_extractor()
+    model.config.ctc_zero_infinity = True
 
     # define training args
     training_args = TrainingArguments(
@@ -177,6 +191,11 @@ if __name__ == "__main__":
         warmup_steps=args.warmup_steps,
         save_total_limit=2,
         logging_dir=f"{args.output_data_dir}/logs",
+        push_to_hub=args.push_to_hub,
+        hub_model_id=args.hub_model_id,
+        hub_strategy=args.hub_strategy,
+        hub_token=args.hub_token,
+        hub_private_repo=args.hub_private_repo,
     )
 
     # create Trainer instance
@@ -205,4 +224,4 @@ if __name__ == "__main__":
     # Saves the model to s3
     trainer.save_model(args.model_dir)
     tokenizer.save_pretrained(args.model_dir)
-
+    trainer.push_to_hub()
