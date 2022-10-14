@@ -23,11 +23,11 @@ if __name__ == "__main__":
 
     # hyperparameters sent by the client are passed as command-line arguments to the script.
     parser.add_argument("--epochs", type=int, default=10)
-    parser.add_argument("--train_batch_size", type=int, default=8)
-    parser.add_argument("--eval_batch_size", type=int, default=8)
+    parser.add_argument("--train_batch_size", type=int, default=16)
+    parser.add_argument("--eval_batch_size", type=int, default=16)
     parser.add_argument("--warmup_steps", type=int, default=500)
     parser.add_argument("--model_name", type=str, default="facebook/wav2vec2-base")
-    parser.add_argument("--learning_rate", type=str, default=1e-4)
+    parser.add_argument("--learning_rate", type=str, default=3e-4)
     parser.add_argument("--weight_decay", type=str, default=0.005)
     parser.add_argument("--vocab_url", type=str)
 
@@ -39,11 +39,11 @@ if __name__ == "__main__":
     parser.add_argument("--test_dir", type=str, default=os.environ["SM_CHANNEL_TEST"])
     
     # HuggingFace parameters
-    parser.add_argument("--push_to_hub", type=boolean, default=False)
-    parser.add_argument("--hub_model_id", type=string)
-    parser.add_argument("--hub_strategy", type=string)
-    parser.add_argument("--hub_token", type=string)
-    parser.add_argument("--hub_private_repo", type=boolean, default=False)
+   # parser.add_argument("--push_to_hub", type=boolean, default=False)
+    parser.add_argument("--hub_model_id", type=str)
+    parser.add_argument("--hub_strategy", type=str)
+    parser.add_argument("--hub_token", type=str)
+    #parser.add_argument("--hub_private_repo", type=boolean, default=False)
 
     args, _ = parser.parse_known_args()
 
@@ -183,19 +183,19 @@ if __name__ == "__main__":
         evaluation_strategy="steps",
         num_train_epochs=args.epochs,
         fp16=True, # enable mixed-precision training
-        save_steps=50,
-        eval_steps=50,
-        logging_steps=50,
+        save_steps=400,
+        eval_steps=400,
+        logging_steps=400,
         learning_rate=float(args.learning_rate),
         weight_decay=float(args.weight_decay),
         warmup_steps=args.warmup_steps,
         save_total_limit=2,
         logging_dir=f"{args.output_data_dir}/logs",
-        push_to_hub=args.push_to_hub,
+        push_to_hub=True,
         hub_model_id=args.hub_model_id,
         hub_strategy=args.hub_strategy,
         hub_token=args.hub_token,
-        hub_private_repo=args.hub_private_repo,
+        #hub_private_repo=True,
     )
 
     # create Trainer instance
